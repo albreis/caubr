@@ -1,999 +1,688 @@
 <!-- PÁGINA DA OU VIDORIA DO CAU/BR @author: Éder Brito @email: eder.brito@caubr.gov.br @description: Página para registro de manifestações na Ouvidoria do CAU/BR e também para consultas de protocolos. Os cadastros são enviados por AJAX para o sistema do fornecedor da solução. O formulário Pesquisar Protocolo envia o usuário para a página de consulta de protocolos no sistema do fornecedor. -->
-
 <!-- CARREGAMENTO MATERIALIZE E ICONES GOOGLE -->
 <script src="https://www.caubr.gov.br/wp-content/themes/clear-line/js/materialize.min.js"></script>
 <!-- FIM CARREGAMENTO MATERIALIZE -->
-
 <!-- CARREGAMENTO JQUERY MASK -->
 <script src="https://www.caubr.gov.br/wp-content/themes/clear-line/js/jquery.mask.js"></script>
 <!-- FIM CARREGAMENTO JQUERY MASK -->
 
-<!-- INÍCIO DOS SCRIPTS ESPECÍFICOS DA PÁGINA DA OUVIDORIA -->
-<script>
-var notaAtendimento = 3;
-var notaSolucao = 3;
-var documento = 0;
-var protocolo = 0;
-<!-- MASCARAS PARA FORMULÁRIOS -->
- $('.ddd').mask('00', {reverse: true});
- $('.telefonePF').mask('9 0000-0000', {reverse: true});
- $('.telefonePJ').mask('9 0000-0000', {reverse: true});
- $('.cpf').mask('000.000.000-00', {reverse: true});
- $('.cnpj').mask('00.000.000/0000-00', {reverse: true});
-<!--FIM-->
-<!-- REMOVER TÍTULO DO TEMA -->
-  $('h1')[0].remove();
-<!--FIM-->
-<!-- FUNÇÃO PARA INICIAR O MODAL E SELECT DO MATERIALIZE -->
-  $(document).ready(function(){
-    $('.modal').modal();
-    $('select').formSelect();
-  });
-<!--FIM-->
-<!-- FUNÇÃO SELECT PESQUISAR PROTOCOLO -->
-  $(document).ready(function(){
-    $('#selectPesquisar').change(function(){
-      switch($(this).val()) {
-        case 'AN':
-          $('.documento').slideUp();
-          $('.documento').empty();
-          $('#selectPesquisar').parents('.input-field').removeClass('m4');
-          $('#selectPesquisar').parents('.input-field').addClass('m12').slideDown();
-          break;
-        case 'PF':
-          $('.documento').empty();
-          $('#selectPesquisar').parents('.input-field').removeClass('m12');
-          $('#selectPesquisar').parents('.input-field').addClass('m4');
-          $('#DOCUMENTO').mask('000.000.000-00', {reverse: true});
-          $('.documento').append(
-                  '<input id="DOCUMENTO" name="documento" type="text" class="validate" required/><label for="DOCUMENTO">CPF Utilizado na Manifestação</label>'
-          ).slideDown('slow');
-          break;
-        case 'PJ':
-          $('.documento').empty();
-          $('#selectPesquisar').parents('.input-field').removeClass('m12');
-          $('#selectPesquisar').parents('.input-field').addClass('m4');
-          $('#DOCUMENTO').mask('00.000.000/0000-00', {reverse: true});
-          $('.documento').append(
-                  '<input id="DOCUMENTO" name="documento" type="text" class="validate" required/><label for="DOCUMENTO">CNPJ Utilizado na Manifestação</label>'
-          ).slideDown('slow');
-          break;
-      }
-    });
-  });
-<!--FIM-->
-<!-- FUNCOES MODAL PESQUISAR PROTOCOLO -->
-function novaMovimentacao(){
-  $('.encerrarManifestacao').hide();
-  $('.novaMovimentacao').show();
-};
-function encerrarManifestacao(){
-  console.log('encerrarMovimentação');
-  $('.novaMovimentacao').hide();
-  $('.encerrarManifestacao').show();
-};
-function trocaEstrelaAtendimento(estrela){
-  notaAtendimento = $(estrela).data('atendimento');
-  if($(estrela).html() == 'star_border'){
-    $(estrela).html('star');
-    $(estrela).prevAll().html('star');
-    $(estrela).nextAll().html('star_border');}else{
-    $(estrela).html('star_border');
-    $(estrela).siblings().html('star_border');
-    notaAtendimento = 3;
-  };
-};
-function trocaEstrelaSolucao(estrela){
-  notaSolucao = $(estrela).data('solucao');
-  if($(estrela).html() == 'star_border'){
-    $(estrela).html('star');
-    $(estrela).prevAll().html('star');
-    $(estrela).nextAll().html('star_border');
-
-  } else {
-    $(estrela).html('star_border');
-    $(estrela).siblings().html('star_border');
-    notaSolucao = 3;
-  };
-};
-<!--FIM-->
-<!-- INÍCIO DOS AJAX PARA OS FORMULÁRIOS -->
-<!-- AJAX FORMULÁRIO ANONIMO -->
-$(document).ready(function(){
-  $('#formAnonimo').submit(function(e){
-    e.preventDefault();
-    $('#formAnonimo').toggle();
-    $('.loaderAnonimo').toggle();
-    var data = new FormData($('#formAnonimo')[0]);
-    setTimeout(function(){
-      $.ajax({
-        type: 'POST',
-        url: 'https://caubr.aloatendimento.com.br/api/alo/cadastrar',
-        data: data,
-        processData: false,
-        contentType: false,
-        success: function(response){
-          console.log(response);
-          $('.loaderAnonimo').toggle();
-          $('.sucessoAnonimo').append('<span>' + response.protocolo + '</span>' + '</p>
-<p style="padding: 5px;background: red;color: white;">Guarde o Número deste protocolo. Sem ele não será possível consultar sua manifestação.</p>
-<p>');
-          $('.sucessoAnonimo').toggle();
-        },
-        error: function(xhr, status, error){
-          console.log(error);
-          alert('Ocorreu um Erro. Tente novamente.');
-          $('#formAnonimo').toggle();
-        }
-      });
-    }, 3000);
-    return false;
-  });
-});
-<!--FIM-->
-<!-- INÍCIO AJAX FORMULÁRIO PESSOA FÍSICA -->
-$(document).ready(function(){
-    $('#formPessoaFisica').submit(function(e){
-    e.preventDefault();
-    $('#formPessoaFisica').toggle();
-    $('.loaderPessoaFisica').toggle();
-    $('.cpf').unmask();
-    $('.telefonePF').unmask();
-    var data = new FormData($('#formPessoaFisica')[0]);
-    setTimeout(function(){
-    $.ajax({
-      type: 'POST',
-      url: 'https://caubr.aloatendimento.com.br/api/alo/cadastrar',
-      data: data,
-      processData: false,
-      contentType: false,
-      success: function(response){
-        console.log(response);
-        $('.loaderPessoaFisica').toggle();
-        $('.sucessoPessoaFisica').append('<span>' + response.protocolo + '</span>' + '</p>
-<p>Guarde o Número deste protocolo. Sem ele não será possível consultar sua manifestação.</p>
-<p>');
-        $('.sucessoPessoaFisica').toggle();
-      },
-      error: function(xhr, status, error){
-        alert(xhr.responseText);
-      }
-    });
-    }, 3000);
-    return false;
-  });
-});
-<!--FIM-->
-<!-- INÍCIO AJAX FORMULÁRIO PESSOA JURÍDICA -->
-$( document ).ready(function() {
-    $('#formPessoaJuridica').submit(function(e){
-    e.preventDefault();
-    $('#formPessoaJuridica').toggle();
-    $('.loaderPessoaJuridica').toggle();
-    $('.cnpj').unmask();
-    $('.telefonePJ').unmask();
-    var data = new FormData($('#formPessoaJuridica')[0]);
-    setTimeout(function(){
-    $.ajax({
-      type: 'POST',
-      url: 'https://caubr.aloatendimento.com.br/api/alo/cadastrar',
-      data: data,
-      processData: false,
-      contentType: false,
-      success: function(response){
-        console.log(response);
-        $('.loaderPessoaJuridica').toggle();
-        $('.sucessoPessoaJuridica').append('<span>' + response.protocolo + '</span>' + '</p>
-<p>Guarde o Número deste protocolo. Sem ele não será possível consultar sua manifestação.</p>
-<p>');
-        $('.sucessoPessoaJuridica').toggle();
-      },
-      error: function(xhr, status, error){
-        alert(xhr.responseText);
-      }
-    });
-    }, 3000);
-    return false;
-  });
-});
-<!--FIM-->
-<!-- INÍCIO AJAX PESQUISAR PROTOCOLO -->
-$( document ).ready(function() {
-    $('#formPesquisarProtocolo').submit(function(e){
-    e.preventDefault();
-    $('#formPesquisarProtocolo').toggle();
-    $('.loaderPesquisarProtocolo').toggle();
-    if($('#DOCUMENTO').val() != null){
-      $('#DOCUMENTO').unmask();
-      var documento = $('#DOCUMENTO').val();
-    } else {
-      var documento = 0;
-    };
-    var protocolo = $('#protocolo').val();
-    setTimeout(function(){
-    $.ajax({
-      type: 'GET',
-      url:'https://caubr.aloatendimento.com.br/api/alo/busca/Y2F1YnIyMDE4?filtro=cadastro&documento='+ documento +'&protocolo=' + protocolo,
-      success: function(cadastro){
-        if(cadastro == null){
-          alert('CPF/CNPJ ou Número de Protocolo inexistente. Tente novamente com as informações corretas.');
-          $('#formPesquisarProtocolo').toggle();
-          $('.loaderPesquisarProtocolo').toggle();
-        }
-        var anexoCadastro = '';
-        var cont = 1;
-        if (cadastro.URL.length > 0){
-          for(i=0; i < cadastro.URL.length; i++){
-            console.log(cadastro.URL[i].Link);
-            anexoCadastro = anexoCadastro + '</p>
-<li> <a href="'+ cadastro.URL[i].Link +'"> Anexo '+cont+'</a>';
-            cont++;
-          }
-        }else{
-          anexoCadastro = 'Sem Anexos';
-        }
-        /*for(i=0; i < cadastro.URL.length; i++){
-          console.log(cadastro.URL[i].Link);
-          anexoCadastro = anexoCadastro + '
-<li> <a href="'+ cadastro.URL[i].Link +'"> Anexo '+cont+'</a>';
-          cont++;
-        }*/
-        var nome = cadastro.NOME_CLIENTE;
-        console.log(cadastro);
-        if(cadastro.CPF != "000.000.000-00"){
-          var cpfCadastro = "<br />
-<tr>
-<td>CPF/CNPJ</td>
-<td>"+ cadastro.CPF +"</td>
-</tr>
-<p>";
-        };
-        switch(cadastro.STATUS){
-          case 'P':
-            var pendente = 'Pendente';
-            break;
-          case 'A':
-            var pendente = 'Em Análise pelo Backoffice';
-            break;
-          case 'F':
-            var pendente = 'Encerrada';
-            break;
-        };
-        cadastroObservacao = cadastro.OBSERVACAO.replace(/(?:\r\n|\r|\n)/g, '<br />');
-        $('.loaderPesquisarProtocolo').toggle();
-        $('.sucessoPesquisarProtocolo').html(
-          '</p>
-<h4>Pesquisar Protocolo</h4>
-<p>\
-          </p>
-<h5>Informações Cadastrais da Manifestação</h5>
-<p>\
-          </p>
-<table class="striped tablePesquisa responsive-table">\
-            </p>
-<tbody>\
-              </p>
-<tr>\
-                </p>
-<td>Protocolo</td>
-<p>\
-                </p>
-<td>'+ cadastro.PROTOCOLO +'</td>
-<p>\
-              </tr>
-<p>\
-              </p>
-<tr>\
-                </p>
-<td>Situação</td>
-<p>\
-                </p>
-<td>'+ pendente +'</td>
-<p>\
-              </tr>
-<p>\
-              </p>
-<tr>\
-                </p>
-<td>Data da Manifestação</td>
-<p>\
-                </p>
-<td>'+ cadastro.DATA_CONTATO +'</td>
-<p>\
-              </tr>
-<p>\
-              </p>
-<tr>\
-                </p>
-<td>Manifestante</td>
-<p>\
-                </p>
-<td>'+ cadastro.NOME_CLIENTE +'</td>
-<p>\
-              </tr>
-<p>\
-              </p>
-<tr>\
-                </p>
-<td>Motivo da Manifestação</td>
-<p>\
-                </p>
-<td>'+ cadastro.MOTIVO +'</td>
-<p>\
-              </tr>
-<p>\
-                ' + cpfCadastro + '\
-              </p>
-<tr>\
-                </p>
-<td>Descrição</td>
-<p>\
-                </p>
-<td>'+ cadastroObservacao +'</td>
-<p>\
-              </tr>
-<p>\
-              </p>
-<tr>\
-                </p>
-<td>Lista de Anexos</td>
-<p>\
-                </p>
-<td><p>\
-                  </p>
-<ul>\
-                    '+ anexoCadastro +'\
-                  </ul>
-<p>\
-                </td>
-<p>\
-              </tr>
-<p>\
-            </tbody>
-<p>\
-          </table>
-<p>'
-        );
-        $('.sucessoPesquisarProtocolo').toggle();
-        $.ajax ({
-          type: 'GET',
-          url: 'https://caubr.aloatendimento.com.br/api/alo/busca/Y2F1YnIyMDE4?filtro=historico&documento='+documento+'&protocolo='+protocolo,
-          success: function(historico){
-            if(historico.length > 0){
-              $('.sucessoPesquisarProtocolo').append('</p>
-<h5>Movimentações</h5>
-<p>');
-            };
-            for(i=0; i < historico.length; i++){ var movimento = i + 1; var anexoHistorico = ''; var contHis = 1; if(historico[i].URL.length > 0){
-                for(a=0; a < historico[i].URL.length; a++){
-                  anexoHistorico = anexoHistorico + '</p>
-<li><a href="' + historico[i].URL[a].Link + '"> Anexo '+ contHis +' </a>  ';
-                  contHis++;
-                }
-              }else{
-                anexoHistorico = 'Sem Anexos';
-              }
-              historicoAnotacao = historico[i].ANOTACAO.replace(/(?:\r\n|\r|\n)/g, '<br />');
-              historicoAnotacao = historicoAnotacao.replace('[NOTA SOLUÇÃO:', '<br />[NOTA SOLUÇÃO');
-              $('.sucessoPesquisarProtocolo').append(
-                '<br />
-<div class="row"><p>\
-                </p>
-<h6 class="left">Movimento #'+ movimento +'</h6>
-<p>\
-                </p>
-<table class="striped tablePesquisa responsive-table">\
-                  </p>
-<tbody>\
-                    </p>
-<tr>\
-                      </p>
-<td>Data da Movimentação</td>
-<p>\
-                      </p>
-<td>'+historico[i].DATA_CONTATO+'</td>
-<p>\
-                    </tr>
-<p>\
-                    </p>
-<tr>\
-                      </p>
-<td>Movimentação</td>
-<p>\
-                      </p>
-<td>'+historico[i].MOTIVO+'</td>
-<p>\
-                    </tr>
-<p>\
-                    </p>
-<tr>\
-                      </p>
-<td>Descrição</td>
-<p>\
-                      </p>
-<td>'+historicoAnotacao+'</td>
-<p>\
-                    </tr>
-<p>\
-                    </p>
-<tr>\
-                      </p>
-<td>Anexos</td>
-<p>\
-                      </p>
-<td><p>\
-                        </p>
-<ul>\
-                          '+ anexoHistorico +'\
-                        </ul>
-<p>\
-                    </td>
-<p>\
-                    </tr>
-<p>\
-                  </tbody>
-<p>\
-                </table>
-<p>\
-                </div>
-<p>'
-              );
-            };
-            $('.sucessoPesquisarProtocolo').append(
-              '</p>
-<div class="botoesPesquisarProtocolo center">\
-                  <a class="waves-effect waves-light btn btnPesquisarProtocolo red" onclick="encerrarManifestacao()"><i class="material-icons left">highlight_off</i>ENCERRAR MANIFESTAÇÃO</a>\
-                  <a class="waves-effect waves-light btn btnPesquisarProtocolo" onclick="novaMovimentacao()"><i class="material-icons right">add_circle</i>REALIZAR NOVA MOVIMENTAÇÃO</a>\
-              </div>
-<p>\
-              </p>
-<form id="formNovaMovimentacao" method="POST" enctype="multipart/form-data" class="novaMovimentacao center"><p>\
-              <input type="hidden" name="DOCUMENTO" VALUE="'+documento+'" />\
-              <input type="hidden" name="PROTOCOLO" VALUE="'+protocolo+'" />\
-                </p>
-<div class="input-field col s12">\
-                  <textarea id="textarea2" name="ANOTACAO" class="materialize-textarea" data-length="120"></textarea>\
-                  <label for="textarea2">Digite a Texto para a Nova Manifestação</label>\
-                </div>
-<p>\
-                </p>
-<div class="file-field input-field"><p>\
-                  </p>
-<div class="btn">\
-                    <span>Anexo</span>\
-                      <input type="file" name="ARQUIVO" multiple/>\
-                  </div>
-<p>\
-                  </p>
-<div class="file-path-wrapper">\
-                    <input class="file-path validate" type="text" placeholder="Insira Um ou Mais Anexos se Necessário"/>\
-                  </div>
-<p>\
-                </div>
-<p>\
-                <button type="submit" class="buttonform btn waves-effect waves-light" name="submit" value="Enviar" form="formNovaMovimentacao">Enviar</button>\
-              </form>
-<p>\
-              </p>
-<form method="POST" id="formEncerrarManifestacao" enctype="multipart/form-data" class="encerrarManifestacao"><p>\
-                </p>
-<div class="row center"><p>\
-                  </p>
-<h6>Pesquisa de Satisfação</h6>
-<p>\
-                  </p>
-<p>Prezado(a) ' + nome + ' , por gentileza, numa escala de 1 a 5:</p>
-<p>\
-                  <br />\
-                  </p>
-<div class="col m6 center">\
-                  Avalie o Atendimento e Cordialidade<br />\
-                    <i onclick="trocaEstrelaAtendimento(this)" class="material-icons voto atendimento" data-atendimento="1">star_border</i>\
-                    <i onclick="trocaEstrelaAtendimento(this)" class="material-icons voto atendimento" data-atendimento="2">star_border</i>\
-                    <i onclick="trocaEstrelaAtendimento(this)" class="material-icons voto atendimento" data-atendimento="3">star_border</i>\
-                    <i onclick="trocaEstrelaAtendimento(this)" class="material-icons voto atendimento" data-atendimento="4">star_border</i>\
-                    <i onclick="trocaEstrelaAtendimento(this)" class="material-icons voto atendimento" data-atendimento="5">star_border</i>\
-                  </div>
-<p>\
-                  </p>
-<div class="col m6 center">\
-                  Avalie a Solução da Manifestação<br />\
-                    <i onclick="trocaEstrelaSolucao(this)" class="material-icons voto solucao" data-solucao="1">star_border</i>\
-                    <i onclick="trocaEstrelaSolucao(this)" class="material-icons voto solucao" data-solucao="2">star_border</i>\
-                    <i onclick="trocaEstrelaSolucao(this)" class="material-icons voto solucao" data-solucao="3">star_border</i>\
-                    <i onclick="trocaEstrelaSolucao(this)" class="material-icons voto solucao" data-solucao="4">star_border</i>\
-                    <i onclick="trocaEstrelaSolucao(this)" class="material-icons voto solucao" data-solucao="5">star_border</i>\
-                  </div>
-<p>\
-                  <button type="submit" class="buttonform btn waves-effect waves-light" name="submit" value="Enviar" form="formEncerrarManifestacao">Enviar</button>\
-                </div>
-<p>\
-              </form>
-<p>'
-            );
-            if(cadastro.STATUS == 'F'){
-              $('.botoesPesquisarProtocolo').remove();
-            };
-            <!-- AJAX ENCERRAR MANIFESTAÇÃO -->
-            $(document).ready(function(){
-                $('#formEncerrarManifestacao').submit(function(e){
-                  e.preventDefault();
-                  $('#formEncerrarManifestacao').toggle();
-                  $('.loaderEncerrarManifestacao').toggle();
-                  var dataEncerrar = new FormData($('#formEncerrarManifestacao')[0]);
-                  dataEncerrar.append('CHAVE','Y2F1YnIyMDE4');
-                  dataEncerrar.append('DOCUMENTO',documento);
-                  dataEncerrar.append('PROTOCOLO',protocolo);
-                  dataEncerrar.append('ATENDIMENTO',notaAtendimento);
-                  dataEncerrar.append('SOLUCAO',notaSolucao);
-                    $.ajax({
-                      type: 'POST',
-                      url: 'https://caubr.aloatendimento.com.br/api/alo/encerrar',
-                      data: dataEncerrar,
-                      processData: false,
-                      contentType: false,
-                      success: function(response){
-                        console.log(response);
-                        if(response.status == 'OK'){
-                          alert('Manifestação Encerrada, clique em "OK" para ser redirecionado para a página principal da Ouvidoria.');
-                          window.location.href = "https://www.caubr.gov.br/91588-2/";
-                        };
-                      },
-                      error: function(xhr, status, error){
-                        console.log(error);
-                        alert('Ocorreu um Erro. Tente novamente.');
-                      }
-                    });
-                  return false;
-                });
-            });
-            <!--FIM-->
-            <!-- AJAX REALIZAR NOVA MANIFESTAÇÃO -->
-            $(document).ready(function(){
-                $('#formNovaMovimentacao').submit(function(e){
-                  e.preventDefault();
-                  $('#formNovaMovimentacao').toggle();
-                  $('.loaderNovaManifestacao').toggle();
-                  var dataNova = new FormData($('#formNovaMovimentacao')[0]);
-                  dataNova.append('CHAVE','Y2F1YnIyMDE4');
-                    $.ajax({
-                      type: 'POST',
-                      url: 'https://caubr.aloatendimento.com.br/api/alo/reabrir',
-                      data: dataNova,
-                      processData: false,
-                      contentType: false,
-                      success: function(response){
-                        console.log(response);
-                        if(response.status == 'OK'){
-                          alert('Nova Movimentação Cadastrada! Clique em "OK" para ser redirecionado para a página principal da Ouvidoria.');
-                          window.location.href = "https://www.caubr.gov.br/91588-2/";
-                        };
-                      },
-                      error: function(xhr, status, error){
-                        console.log(error);
-                        alert('Ocorreu um Erro. Tente novamente.');
-                      }
-                    });
-                  return false;
-                });
-            });
-            <!--FIM-->
-          }
-        });
-      },
-      error: function(xhr, status, error){
-        alert(xhr.responseText);
-      }
-    });
-    }, 3000);
-    return false;
-  });
-});
-<!--FIM-->
-<!--FIM DOS AJAX-->
-</script>
-<!-- FIM SCRIPTS ESPECÍFICOS PÁGINA OUVIDORIA -->
+<!-- CARREGAMENTO JS OUVIDORIA -->
+<script src="https://www.caubr.gov.br/wp-content/themes/clear-line/js/ouvidoria.js"></script>
+<!-- FIM CARREGAMENTO JS OUVIDORIA -->
 
 <!-- INÍCIO DA DIAGRAMAÇÃO DA PÁGINA DA OUVIDORIA -->
 <div class="row">
-<div class="col m12">
-<h1 class="titulo-ouvidoria">Canal da Ouvidoria</h1>
-
-<hr />
-
-<div class="ouvidoria-info">
-<p style="margin-left: 30px;">A Ouvidoria é um pós-atendimento ao cidadão: atende aquele que já tenha entrado em contato com o Conselho Estadual ou com a nossa Central de Atendimento.</p>
-
-</div>
-<div class="texto-ouvidoria">
-<h2>Conceito:</h2>
-<p style="margin-left: 30px;">É o canal de comunicação direto entre o cidadão e o Conselho de Arquitetura e Urbanismo, por meio do qual é possível registrar reclamações, solicitações, denúncias, elogios e sugestões.</p>
-<p style="margin-left: 30px;">O Canal da Ouvidoria se destina a dar suporte ao público nos questionamentos pertinentes à atividade profissional de Arquitetura e Urbanismo. A Ouvidoria busca o aprimoramento no relacionamento do usuário com a Instituição, oferecendo-lhe o acesso às informações sobre suas atividades, assim como serviços disponibilizados pelo CAU, entre outros assuntos pertinentes, facilitando o exercício profissional.</p>
-&nbsp;
-
-Caso queira manifestar reclamações, solicitações, denúncias, sugestões ou elogios correlatos ao exercício da profissão teremos enorme prazer em atendê-lo.
-
-&nbsp;
-<h2>O que não cadastrar na Ouvidoria</h2>
-<ul>
- 	<li style="list-style: inside;">Assuntos não pertinentes ao exercício da profissão da Arquitetura e Urbanismo;</li>
- 	<li style="list-style: inside;">Envio de documentos para registro profissional ou de empresa;</li>
- 	<li style="list-style: inside;">Envio de documentos para RRT;</li>
- 	<li style="list-style: inside;">Propagandas;</li>
- 	<li style="list-style: inside;">Conteúdos descritos na Lei de Acesso à Informação. <a href="http://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12527.htm" target="_blank" rel="noopener noreferrer">Clique aqui</a> para mais informações.</li>
- 	<li style="list-style: inside;">Cadastro de denúncias acerca de infrações da atividade profissional. Para uma correta atuação da fiscalização do CAU, é necessário que a denúncia inicial seja realizada em canal próprio disponibilizado pelo Conselho: <a href="https://siccau.caubr.gov.br/app/view/sight/externo.php?form=CadastrarDenuncia" target="_blank" rel="noopener noreferrer">Clique Aqui</a>.</li>
-</ul>
-</div>
-<div class="ouvidoria-forms">
-<h1>Registre sua Manifestação</h1>
-<div class="row center">
-<div class="col m6 s12"><button class="link modal-trigger" data-target="anonimo"><img src="https://www.caubr.gov.br/wp-content/uploads/2018/08/anonimo.png" /></button></div>
-<div class="col m6 s12"><button class="link modal-trigger" data-target="pessoaFisica"><img src="https://www.caubr.gov.br/wp-content/uploads/2018/08/pessoa-fisica.png" /></button></div>
-</div>
-<div class="row center">
-<div class="col m6 s12"><button class="link modal-trigger" data-target="pessoaJuridica"><img src="https://www.caubr.gov.br/wp-content/uploads/2018/08/pessoa-juridica.png" /></button></div>
-<div class="col m6 s12"><button class="link modal-trigger" data-target="pesquisarProtocolo"><img src="https://www.caubr.gov.br/wp-content/uploads/2018/08/pesquisar-protocolo.png" /></button></div>
-</div>
-</div>
-</div>
+  <div class="col m12">
+    <h1 class="titulo-ouvidoria">Canal da Ouvidoria</h1>
+    <hr />
+    <div class="ouvidoria-info">
+      <p style="margin-left: 30px">
+        A Ouvidoria é um pós-atendimento ao cidadão: atende aquele que já tenha
+        entrado em contato com o Conselho Estadual ou com a nossa Central de
+        Atendimento.
+      </p>
+    </div>
+    <div class="texto-ouvidoria">
+      <h2>Conceito:</h2>
+      <p style="margin-left: 30px">
+        É o canal de comunicação direto entre o cidadão e o Conselho de
+        Arquitetura e Urbanismo, por meio do qual é possível registrar
+        reclamações, solicitações, denúncias, elogios e sugestões.
+      </p>
+      <p style="margin-left: 30px">
+        O Canal da Ouvidoria se destina a dar suporte ao público nos
+        questionamentos pertinentes à atividade profissional de Arquitetura e
+        Urbanismo. A Ouvidoria busca o aprimoramento no relacionamento do
+        usuário com a Instituição, oferecendo-lhe o acesso às informações sobre
+        suas atividades, assim como serviços disponibilizados pelo CAU, entre
+        outros assuntos pertinentes, facilitando o exercício profissional.
+      </p>
+      &nbsp; Caso queira manifestar reclamações, solicitações, denúncias,
+      sugestões ou elogios correlatos ao exercício da profissão teremos enorme
+      prazer em atendê-lo. &nbsp;
+      <h2>O que não cadastrar na Ouvidoria</h2>
+      <ul>
+        <li style="list-style: inside">
+          Assuntos não pertinentes ao exercício da profissão da Arquitetura e
+          Urbanismo;
+        </li>
+        <li style="list-style: inside">
+          Envio de documentos para registro profissional ou de empresa;
+        </li>
+        <li style="list-style: inside">Envio de documentos para RRT;</li>
+        <li style="list-style: inside">Propagandas;</li>
+        <li style="list-style: inside">
+          Conteúdos descritos na Lei de Acesso à Informação.
+          <a
+            href="http://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12527.htm"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Clique aqui</a
+          >
+          para mais informações.
+        </li>
+        <li style="list-style: inside">
+          Cadastro de denúncias acerca de infrações da atividade profissional.
+          Para uma correta atuação da fiscalização do CAU, é necessário que a
+          denúncia inicial seja realizada em canal próprio disponibilizado pelo
+          Conselho:
+          <a
+            href="https://siccau.caubr.gov.br/app/view/sight/externo.php?form=CadastrarDenuncia"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Clique Aqui</a
+          >.
+        </li>
+      </ul>
+    </div>
+    <div class="ouvidoria-forms">
+      <h1>Registre sua Manifestação</h1>
+      <div class="row center">
+        <div class="col m6 s12">
+          <button class="link modal-trigger" data-target="anonimo">
+            <img
+              src="https://www.caubr.gov.br/wp-content/uploads/2018/08/anonimo.png"
+            />
+          </button>
+        </div>
+        <div class="col m6 s12">
+          <button class="link modal-trigger" data-target="pessoaFisica">
+            <img
+              src="https://www.caubr.gov.br/wp-content/uploads/2018/08/pessoa-fisica.png"
+            />
+          </button>
+        </div>
+      </div>
+      <div class="row center">
+        <div class="col m6 s12">
+          <button class="link modal-trigger" data-target="pessoaJuridica">
+            <img
+              src="https://www.caubr.gov.br/wp-content/uploads/2018/08/pessoa-juridica.png"
+            />
+          </button>
+        </div>
+        <div class="col m6 s12">
+          <button class="link modal-trigger" data-target="pesquisarProtocolo">
+            <img
+              src="https://www.caubr.gov.br/wp-content/uploads/2018/08/pesquisar-protocolo.png"
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- ESTRUTURA MODAL - FORMULÁRIO ANÔNIMO -->
 <div id="anonimo" class="modal">
-<div class="modal-content">
-<h4>Cadastrar Manifestação - Anônimo</h4>
-<!-- MENSAGEM QUE APARECE EM CASO DE SUCESSO NO ENVIO DO FORMULÁRIO -->
-<div class="sucessoAnonimo col m12 center">
+  <div class="modal-content">
+    <h4>Cadastrar Manifestação - Anônimo</h4>
+    <!-- MENSAGEM QUE APARECE EM CASO DE SUCESSO NO ENVIO DO FORMULÁRIO -->
+    <div class="sucessoAnonimo col m12 center">
+      SUA MENSAGEM FOI ENVIADA COM SUCESSO SEU NÚMERO DE PROTOCOLO É:
+    </div>
+    <!-- FIM MENSAGEM -->
+    <!-- INÍCIO ANIMAÇÃO LOADER ENQUANTO ESPERA RESPOSTA DO AJAX -->
+    <div class="loaderAnonimo col m12 align-center center">
+      <div class="preloader-wrapper big active">
+        <div class="spinner-layer spinner-blue-only">
+          <div class="circle-clipper left">
+            <div class="circle"></div>
+          </div>
+          <div class="gap-patch">
+            <div class="circle"></div>
+          </div>
+          <div class="circle-clipper right">
+            <div class="circle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- FIM ANIMAÇÃO -->
 
-SUA MENSAGEM FOI ENVIADA COM SUCESSO
-
-SEU NÚMERO DE PROTOCOLO É:
-
-</div>
-<!-- FIM MENSAGEM -->
-<!-- INÍCIO ANIMAÇÃO LOADER ENQUANTO ESPERA RESPOSTA DO AJAX -->
-<div class="loaderAnonimo col m12 align-center center">
-<div class="preloader-wrapper big active">
-<div class="spinner-layer spinner-blue-only">
-<div class="circle-clipper left">
-<div class="circle"></div>
-</div>
-<div class="gap-patch">
-<div class="circle"></div>
-</div>
-<div class="circle-clipper right">
-<div class="circle"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- FIM ANIMAÇÃO -->
-
-<form id="formAnonimo" enctype="multipart/form-data" method="POST">
-<div class="row">
-
-<!-- PRIMEIRA COLUNA -->
-<div class="col m6 s12"><input id="CHAVE" name="CHAVE" type="hidden" value="Y2F1YnIyMDE4" />
-<input id="NOME" name="NOME" type="hidden" />
-<input name="DOCUMENTO" type="hidden" />
-<input name="SEXO" type="hidden" />
-<input name="DDD" type="hidden" />
-<input name="TELEFONE" type="hidden" />
-<input name="EMAIL" type="hidden" />
-<input name="TIPO_FORMULARIO" type="hidden" value="ANO" />
-<div class="input-field"><select name="ESTADO" required="">
-<option value="AC">Acre</option>
-<option value="AL">Alagoas</option>
-<option value="AP">Amapá</option>
-<option value="AM">Amazonas</option>
-<option value="BA">Bahia</option>
-<option value="CE">Ceará</option>
-<option value="DF">Distrito Federal</option>
-<option value="ES">Espírito Santo</option>
-<option value="GO">Goiás</option>
-<option value="MA">Maranhão</option>
-<option value="MT">Mato Grosso</option>
-<option value="MS">Mato Grosso do Sul</option>
-<option value="MG">Minas Gerais</option>
-<option value="PA">Pará</option>
-<option value="PB">Paraíba</option>
-<option value="PR">Paraná</option>
-<option value="PE">Pernambuco</option>
-<option value="PI">Piauí</option>
-<option value="RJ">Rio de Janeiro</option>
-<option value="RN">Rio Grande do Norte</option>
-<option value="RS">Rio Grande do Sul</option>
-<option value="RO">Rondônia</option>
-<option value="RR">Roraima</option>
-<option value="SC">Santa Catarina</option>
-<option value="SP">São Paulo</option>
-<option value="SE">Sergipe</option>
-<option value="TO">Tocantins</option>
-</select></div>
-<div class="input-field"><input id="municipio" class="validate" name="MUNICIPIO" required="" type="text" />
-<label for="municipio">Município</label></div>
-<div class="file-field input-field">
-<div class="buttonanexo btn">Anexo
-<input multiple="multiple" name="ARQUIVO" type="file" /></div>
-<div class="file-path-wrapper"><input class="file-path validate" type="text" placeholder="Anexe um ou mais arquivos" /></div>
-</div>
-<div class="card">
-<div class="card-content card-anonimo white-text"><i class="large material-icons right">error_outline</i>
-<span class="card-title">Demanda Anônima</span>
-<p style="text-align: justify;">Comunicação de irregularidade, ilícito, ou insatisfação. Denúncias devem conter indícios de relevância, autoria e materialidade para providências por parte do CAU/BR.</p>
-<p style="text-align: justify;">Segundo Instrução Normativa nº 5 do Ministério da Transparência e Controladoria Geral da União, o anonimato não acarreta obrigação do órgão de criação de resposta conclusiva Este tipo de atendimento não gera e-mail para acompanhamento, guarde seu protocolo para consultas.</p>
-
-</div>
-</div>
-</div>
-<!-- SEGUNDA COLUNA -->
-<div class="col m6 s12">
-<div class="input-field"><select name="MOTIVO" required="">
-<option value="13">DENÚNCIA</option>
-<option value="246">RECLAMAÇÃO</option>
-</select></div>
-<div class="input-field"><textarea id="textarea1" class="materialize-textarea" maxlength="4000" name="MENSAGEM" required=""></textarea>
-<label for="textarea1">Mensagem do Atendimento</label></div>
-</div>
-</div>
-<button class="buttonform btn waves-effect waves-light" form="formAnonimo" name="submit" type="submit" value="Enviar">Enviar</button>
-
-</form>
-<div id="resp"></div>
-</div>
+    <form id="formAnonimo" enctype="multipart/form-data" method="POST">
+      <div class="row">
+        <!-- PRIMEIRA COLUNA -->
+        <div class="col m6 s12">
+          <input id="CHAVE" name="CHAVE" type="hidden" value="Y2F1YnIyMDE4" />
+          <input id="NOME" name="NOME" type="hidden" />
+          <input name="DOCUMENTO" type="hidden" />
+          <input name="SEXO" type="hidden" />
+          <input name="DDD" type="hidden" />
+          <input name="TELEFONE" type="hidden" />
+          <input name="EMAIL" type="hidden" />
+          <input name="TIPO_FORMULARIO" type="hidden" value="ANO" />
+          <div class="input-field">
+            <select name="ESTADO" required="">
+              <option value="AC">Acre</option>
+              <option value="AL">Alagoas</option>
+              <option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option>
+              <option value="BA">Bahia</option>
+              <option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option>
+              <option value="ES">Espírito Santo</option>
+              <option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option>
+              <option value="MT">Mato Grosso</option>
+              <option value="MS">Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option>
+              <option value="PA">Pará</option>
+              <option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option>
+              <option value="PE">Pernambuco</option>
+              <option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option>
+              <option value="RN">Rio Grande do Norte</option>
+              <option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option>
+              <option value="RR">Roraima</option>
+              <option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option>
+              <option value="SE">Sergipe</option>
+              <option value="TO">Tocantins</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <input
+              id="municipio"
+              class="validate"
+              name="MUNICIPIO"
+              required=""
+              type="text"
+            />
+            <label for="municipio">Município</label>
+          </div>
+          <div class="file-field input-field">
+            <div class="buttonanexo btn">
+              Anexo <input multiple="multiple" name="ARQUIVO" type="file" />
+            </div>
+            <div class="file-path-wrapper">
+              <input
+                class="file-path validate"
+                type="text"
+                placeholder="Anexe um ou mais arquivos"
+              />
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-content card-anonimo white-text">
+              <i class="large material-icons right">error_outline</i>
+              <span class="card-title">Demanda Anônima</span>
+              <p style="text-align: justify">
+                Comunicação de irregularidade, ilícito, ou insatisfação.
+                Denúncias devem conter indícios de relevância, autoria e
+                materialidade para providências por parte do CAU/BR.
+              </p>
+              <p style="text-align: justify">
+                Segundo Instrução Normativa nº 5 do Ministério da Transparência
+                e Controladoria Geral da União, o anonimato não acarreta
+                obrigação do órgão de criação de resposta conclusiva Este tipo
+                de atendimento não gera e-mail para acompanhamento, guarde seu
+                protocolo para consultas.
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- SEGUNDA COLUNA -->
+        <div class="col m6 s12">
+          <div class="input-field">
+            <select name="MOTIVO" required="">
+              <option value="13">DENÚNCIA</option>
+              <option value="246">RECLAMAÇÃO</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <textarea
+              id="textarea1"
+              class="materialize-textarea"
+              maxlength="4000"
+              name="MENSAGEM"
+              required=""
+            ></textarea>
+            <label for="textarea1">Mensagem do Atendimento</label>
+          </div>
+        </div>
+      </div>
+      <button
+        class="buttonform btn waves-effect waves-light"
+        form="formAnonimo"
+        name="submit"
+        type="submit"
+        value="Enviar"
+      >
+        Enviar
+      </button>
+    </form>
+    <div id="resp"></div>
+  </div>
 </div>
 <!-- FIM ESTRUTURA MODAL - ANÔNIMO -->
 
 <!-- INÍCIO ESTRUTURA MODAL - FORMULÁRIO PESSOA FÍSICA -->
 <div id="pessoaFisica" class="modal">
-<div class="modal-content">
-<h4>Cadastrar Manifestação - Pessoa Física</h4>
-<div class="sucessoPessoaFisica col m12 center">
-
-SUA MENSAGEM FOI ENVIADA COM SUCESSO
-
-SEU NÚMERO DE PROTOCOLO É:
-
-</div>
-<div class="loaderPessoaFisica col m12 align-center center">
-<div class="preloader-wrapper big active">
-<div class="spinner-layer spinner-blue-only">
-<div class="circle-clipper left">
-<div class="circle"></div>
-</div>
-<div class="gap-patch">
-<div class="circle"></div>
-</div>
-<div class="circle-clipper right">
-<div class="circle"></div>
-</div>
-</div>
-</div>
-</div>
-<form id="formPessoaFisica" enctype="multipart/form-data" method="POST">
-<div class="row">
-<div class="col m6 s12"><input id="CHAVE" name="CHAVE" type="hidden" value="Y2F1YnIyMDE4" />
-<input name="TIPO_FORMULARIO" type="hidden" value="PF" />
-<div class="input-field"><input id="nome" class="validate" name="NOME" required="" type="text" placeholder="Nome Completo" />
-<label for="nome">Nome</label></div>
-<div class="input-field"><input id="cpf" class="validate cpf" name="DOCUMENTO" required="" type="text" />
-<label for="cpf">CPF</label></div>
-<div class="row">
-<div class="col s5"><select name="SEXO" required="">
-<option value="M">Masculino</option>
-<option value="F">Feminino</option>
-</select></div>
-<div class="col s7"><select name="ESTADO" required="">
-<option value="AC">Acre</option>
-<option value="AL">Alagoas</option>
-<option value="AP">Amapá</option>
-<option value="AM">Amazonas</option>
-<option value="BA">Bahia</option>
-<option value="CE">Ceará</option>
-<option value="DF">Distrito Federal</option>
-<option value="ES">Espírito Santo</option>
-<option value="GO">Goiás</option>
-<option value="MA">Maranhão</option>
-<option value="MT">Mato Grosso</option>
-<option value="MS">Mato Grosso do Sul</option>
-<option value="MG">Minas Gerais</option>
-<option value="PA">Pará</option>
-<option value="PB">Paraíba</option>
-<option value="PR">Paraná</option>
-<option value="PE">Pernambuco</option>
-<option value="PI">Piauí</option>
-<option value="RJ">Rio de Janeiro</option>
-<option value="RN">Rio Grande do Norte</option>
-<option value="RS">Rio Grande do Sul</option>
-<option value="RO">Rondônia</option>
-<option value="RR">Roraima</option>
-<option value="SC">Santa Catarina</option>
-<option value="SP">São Paulo</option>
-<option value="SE">Sergipe</option>
-<option value="TO">Tocantins</option>
-</select></div>
-</div>
-<div class="input-field"><input id="municipio" class="validate" name="MUNICIPIO" required="" type="text" />
-<label for="municipio">Município</label></div>
-<div class="row">
-<div class="col m3 s6">
-<div class="input-field"><input id="ddd" class="validate ddd" name="DDD" required="" type="text" />
-<label for="ddd">DDD</label></div>
-</div>
-<div class="col m9 s6">
-<div class="input-field"><input id="telefone" class="validate telefonePF" name="TELEFONE" required="" type="text" />
-<label for="telefone">Telefone para Contato</label></div>
-</div>
-</div>
-<div class="input-field"><input id="email" class="validate" name="EMAIL" required="" type="text" />
-<label for="email">E-mail</label></div>
-<div class="file-field input-field">
-<div class="buttonanexo btn">Anexo
-<input multiple="multiple" name="ARQUIVO" type="file" /></div>
-<div class="file-path-wrapper"><input class="file-path validate" type="text" placeholder="Anexe um ou mais arquivos" /></div>
-</div>
-</div>
-<!-- -->
-<div class="col m6 s12">
-<div class="input-field"><select name="MOTIVO" required="">
-<option value="246">RECLAMAÇÃO</option>
-<option value="381">INFORMAÇÃO</option>
-<option value="380">SOLICITAÇÃO</option>
-<option value="340">SUGESTÃO</option>
-<option value="45">ELOGIO</option>
-<option value="13">DENÚNCIA</option>
-</select></div>
-<div class="input-field"><textarea id="textarea1" class="materialize-textarea" maxlength="4000" name="MENSAGEM" required=""></textarea>
-<label for="textarea1">Mensagem do Atendimento</label></div>
-</div>
-</div>
-<button class="buttonform btn waves-effect waves-light" form="formPessoaFisica" name="submit" type="submit" value="Enviar">Enviar</button>
-
-</form></div>
+  <div class="modal-content">
+    <h4>Cadastrar Manifestação - Pessoa Física</h4>
+    <div class="sucessoPessoaFisica col m12 center">
+      SUA MENSAGEM FOI ENVIADA COM SUCESSO SEU NÚMERO DE PROTOCOLO É:
+    </div>
+    <div class="loaderPessoaFisica col m12 align-center center">
+      <div class="preloader-wrapper big active">
+        <div class="spinner-layer spinner-blue-only">
+          <div class="circle-clipper left">
+            <div class="circle"></div>
+          </div>
+          <div class="gap-patch">
+            <div class="circle"></div>
+          </div>
+          <div class="circle-clipper right">
+            <div class="circle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <form id="formPessoaFisica" enctype="multipart/form-data" method="POST">
+      <div class="row">
+        <div class="col m6 s12">
+          <input id="CHAVE" name="CHAVE" type="hidden" value="Y2F1YnIyMDE4" />
+          <input name="TIPO_FORMULARIO" type="hidden" value="PF" />
+          <div class="input-field">
+            <input
+              id="nome"
+              class="validate"
+              name="NOME"
+              required=""
+              type="text"
+              placeholder="Nome Completo"
+            />
+            <label for="nome">Nome</label>
+          </div>
+          <div class="input-field">
+            <input
+              id="cpf"
+              class="validate cpf"
+              name="DOCUMENTO"
+              required=""
+              type="text"
+            />
+            <label for="cpf">CPF</label>
+          </div>
+          <div class="row">
+            <div class="col s5">
+              <select name="SEXO" required="">
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+              </select>
+            </div>
+            <div class="col s7">
+              <select name="ESTADO" required="">
+                <option value="AC">Acre</option>
+                <option value="AL">Alagoas</option>
+                <option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option>
+                <option value="BA">Bahia</option>
+                <option value="CE">Ceará</option>
+                <option value="DF">Distrito Federal</option>
+                <option value="ES">Espírito Santo</option>
+                <option value="GO">Goiás</option>
+                <option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option>
+                <option value="MS">Mato Grosso do Sul</option>
+                <option value="MG">Minas Gerais</option>
+                <option value="PA">Pará</option>
+                <option value="PB">Paraíba</option>
+                <option value="PR">Paraná</option>
+                <option value="PE">Pernambuco</option>
+                <option value="PI">Piauí</option>
+                <option value="RJ">Rio de Janeiro</option>
+                <option value="RN">Rio Grande do Norte</option>
+                <option value="RS">Rio Grande do Sul</option>
+                <option value="RO">Rondônia</option>
+                <option value="RR">Roraima</option>
+                <option value="SC">Santa Catarina</option>
+                <option value="SP">São Paulo</option>
+                <option value="SE">Sergipe</option>
+                <option value="TO">Tocantins</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-field">
+            <input
+              id="municipio"
+              class="validate"
+              name="MUNICIPIO"
+              required=""
+              type="text"
+            />
+            <label for="municipio">Município</label>
+          </div>
+          <div class="row">
+            <div class="col m3 s6">
+              <div class="input-field">
+                <input
+                  id="ddd"
+                  class="validate ddd"
+                  name="DDD"
+                  required=""
+                  type="text"
+                />
+                <label for="ddd">DDD</label>
+              </div>
+            </div>
+            <div class="col m9 s6">
+              <div class="input-field">
+                <input
+                  id="telefone"
+                  class="validate telefonePF"
+                  name="TELEFONE"
+                  required=""
+                  type="text"
+                />
+                <label for="telefone">Telefone para Contato</label>
+              </div>
+            </div>
+          </div>
+          <div class="input-field">
+            <input
+              id="email"
+              class="validate"
+              name="EMAIL"
+              required=""
+              type="text"
+            />
+            <label for="email">E-mail</label>
+          </div>
+          <div class="file-field input-field">
+            <div class="buttonanexo btn">
+              Anexo <input multiple="multiple" name="ARQUIVO" type="file" />
+            </div>
+            <div class="file-path-wrapper">
+              <input
+                class="file-path validate"
+                type="text"
+                placeholder="Anexe um ou mais arquivos"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- -->
+        <div class="col m6 s12">
+          <div class="input-field">
+            <select name="MOTIVO" required="">
+              <option value="246">RECLAMAÇÃO</option>
+              <option value="381">INFORMAÇÃO</option>
+              <option value="380">SOLICITAÇÃO</option>
+              <option value="340">SUGESTÃO</option>
+              <option value="45">ELOGIO</option>
+              <option value="13">DENÚNCIA</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <textarea
+              id="textarea1"
+              class="materialize-textarea"
+              maxlength="4000"
+              name="MENSAGEM"
+              required=""
+            ></textarea>
+            <label for="textarea1">Mensagem do Atendimento</label>
+          </div>
+        </div>
+      </div>
+      <button
+        class="buttonform btn waves-effect waves-light"
+        form="formPessoaFisica"
+        name="submit"
+        type="submit"
+        value="Enviar"
+      >
+        Enviar
+      </button>
+    </form>
+  </div>
 </div>
 <!-- FIM ESTRUTURA MODAL PESSOA FÍSICA -->
 
 <!-- ESTRUTURA MODAL - FORMULÁRIO PESSOA JURÍDICA -->
 <div id="pessoaJuridica" class="modal">
-<div class="modal-content">
-<h4>Cadastrar Manifestação - Pessoa Jurídica</h4>
-<div class="sucessoPessoaJuridica col m12 center">
-
-SUA MENSAGEM FOI ENVIADA COM SUCESSO
-
-SEU NÚMERO DE PROTOCOLO É:
-
-</div>
-<div class="loaderPessoaJuridica col m12 align-center center">
-<div class="preloader-wrapper big active">
-<div class="spinner-layer spinner-blue-only">
-<div class="circle-clipper left">
-<div class="circle"></div>
-</div>
-<div class="gap-patch">
-<div class="circle"></div>
-</div>
-<div class="circle-clipper right">
-<div class="circle"></div>
-</div>
-</div>
-</div>
-</div>
-<form id="formPessoaJuridica" enctype="multipart/form-data" method="POST">
-<div class="row">
-<div class="col m6 s12"><input id="CHAVE" name="CHAVE" type="hidden" value="Y2F1YnIyMDE4" />
-<input name="SEXO" type="hidden" />
-<input name="TIPO_FORMULARIO" type="hidden" value="PJ" />
-<div class="input-field"><input id="nome" class="validate" name="NOME" required="" type="text" placeholder="Razão Social" />
-<label for="razao">Nome da Empresa</label></div>
-<div class="input-field"><input id="cnpj" class="validate cnpj" name="DOCUMENTO" required="" type="text" />
-<label for="cnpj">CNPJ</label></div>
-<div class="input-field"><select name="ESTADO" required="">
-<option value="AC">Acre</option>
-<option value="AL">Alagoas</option>
-<option value="AP">Amapá</option>
-<option value="AM">Amazonas</option>
-<option value="BA">Bahia</option>
-<option value="CE">Ceará</option>
-<option value="DF">Distrito Federal</option>
-<option value="ES">Espírito Santo</option>
-<option value="GO">Goiás</option>
-<option value="MA">Maranhão</option>
-<option value="MT">Mato Grosso</option>
-<option value="MS">Mato Grosso do Sul</option>
-<option value="MG">Minas Gerais</option>
-<option value="PA">Pará</option>
-<option value="PB">Paraíba</option>
-<option value="PR">Paraná</option>
-<option value="PE">Pernambuco</option>
-<option value="PI">Piauí</option>
-<option value="RJ">Rio de Janeiro</option>
-<option value="RN">Rio Grande do Norte</option>
-<option value="RS">Rio Grande do Sul</option>
-<option value="RO">Rondônia</option>
-<option value="RR">Roraima</option>
-<option value="SC">Santa Catarina</option>
-<option value="SP">São Paulo</option>
-<option value="SE">Sergipe</option>
-<option value="TO">Tocantins</option>
-</select></div>
-<div class="input-field"><input id="municipio" class="validate" name="MUNICIPIO" required="" type="text" />
-<label for="municipio">Município</label></div>
-<div class="row">
-<div class="col m3 s6">
-<div class="input-field"><input id="ddd" class="validate ddd" name="DDD" required="" type="text" />
-<label for="ddd">DDD</label></div>
-</div>
-<div class="col m9 s6">
-<div class="input-field"><input id="telefone" class="validate telefonePJ" name="TELEFONE" required="" type="text" />
-<label for="telefone">Telefone para Contato</label></div>
-</div>
-</div>
-<div class="input-field"><input id="email" class="validate" name="EMAIL" required="" type="text" />
-<label for="email">E-mail</label></div>
-<div class="file-field input-field">
-<div class="buttonanexo btn">Anexo
-<input multiple="multiple" name="ARQUIVO" type="file" /></div>
-<div class="file-path-wrapper"><input class="file-path validate" type="text" placeholder="Anexe um ou mais arquivos" /></div>
-</div>
-</div>
-<!-- -->
-<div class="col m6 s12">
-<div class="input-field"><select name="MOTIVO" required="">
-<option value="246">RECLAMAÇÃO</option>
-<option value="381">INFORMAÇÃO</option>
-<option value="380">SOLICITAÇÃO</option>
-<option value="340">SUGESTÃO</option>
-<option value="45">ELOGIO</option>
-<option value="13">DENÚNCIA</option>
-</select></div>
-<div class="input-field"><textarea id="textarea1" class="materialize-textarea" maxlength="4000" name="MENSAGEM" required=""></textarea>
-<label for="textarea1">Mensagem do Atendimento</label></div>
-</div>
-</div>
-<button class="buttonform btn waves-effect waves-light" form="formPessoaJuridica" name="submit" type="submit" value="Enviar">Enviar</button>
-
-</form></div>
+  <div class="modal-content">
+    <h4>Cadastrar Manifestação - Pessoa Jurídica</h4>
+    <div class="sucessoPessoaJuridica col m12 center">
+      SUA MENSAGEM FOI ENVIADA COM SUCESSO SEU NÚMERO DE PROTOCOLO É:
+    </div>
+    <div class="loaderPessoaJuridica col m12 align-center center">
+      <div class="preloader-wrapper big active">
+        <div class="spinner-layer spinner-blue-only">
+          <div class="circle-clipper left">
+            <div class="circle"></div>
+          </div>
+          <div class="gap-patch">
+            <div class="circle"></div>
+          </div>
+          <div class="circle-clipper right">
+            <div class="circle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <form id="formPessoaJuridica" enctype="multipart/form-data" method="POST">
+      <div class="row">
+        <div class="col m6 s12">
+          <input id="CHAVE" name="CHAVE" type="hidden" value="Y2F1YnIyMDE4" />
+          <input name="SEXO" type="hidden" />
+          <input name="TIPO_FORMULARIO" type="hidden" value="PJ" />
+          <div class="input-field">
+            <input
+              id="nome"
+              class="validate"
+              name="NOME"
+              required=""
+              type="text"
+              placeholder="Razão Social"
+            />
+            <label for="razao">Nome da Empresa</label>
+          </div>
+          <div class="input-field">
+            <input
+              id="cnpj"
+              class="validate cnpj"
+              name="DOCUMENTO"
+              required=""
+              type="text"
+            />
+            <label for="cnpj">CNPJ</label>
+          </div>
+          <div class="input-field">
+            <select name="ESTADO" required="">
+              <option value="AC">Acre</option>
+              <option value="AL">Alagoas</option>
+              <option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option>
+              <option value="BA">Bahia</option>
+              <option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option>
+              <option value="ES">Espírito Santo</option>
+              <option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option>
+              <option value="MT">Mato Grosso</option>
+              <option value="MS">Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option>
+              <option value="PA">Pará</option>
+              <option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option>
+              <option value="PE">Pernambuco</option>
+              <option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option>
+              <option value="RN">Rio Grande do Norte</option>
+              <option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option>
+              <option value="RR">Roraima</option>
+              <option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option>
+              <option value="SE">Sergipe</option>
+              <option value="TO">Tocantins</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <input
+              id="municipio"
+              class="validate"
+              name="MUNICIPIO"
+              required=""
+              type="text"
+            />
+            <label for="municipio">Município</label>
+          </div>
+          <div class="row">
+            <div class="col m3 s6">
+              <div class="input-field">
+                <input
+                  id="ddd"
+                  class="validate ddd"
+                  name="DDD"
+                  required=""
+                  type="text"
+                />
+                <label for="ddd">DDD</label>
+              </div>
+            </div>
+            <div class="col m9 s6">
+              <div class="input-field">
+                <input
+                  id="telefone"
+                  class="validate telefonePJ"
+                  name="TELEFONE"
+                  required=""
+                  type="text"
+                />
+                <label for="telefone">Telefone para Contato</label>
+              </div>
+            </div>
+          </div>
+          <div class="input-field">
+            <input
+              id="email"
+              class="validate"
+              name="EMAIL"
+              required=""
+              type="text"
+            />
+            <label for="email">E-mail</label>
+          </div>
+          <div class="file-field input-field">
+            <div class="buttonanexo btn">
+              Anexo <input multiple="multiple" name="ARQUIVO" type="file" />
+            </div>
+            <div class="file-path-wrapper">
+              <input
+                class="file-path validate"
+                type="text"
+                placeholder="Anexe um ou mais arquivos"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- -->
+        <div class="col m6 s12">
+          <div class="input-field">
+            <select name="MOTIVO" required="">
+              <option value="246">RECLAMAÇÃO</option>
+              <option value="381">INFORMAÇÃO</option>
+              <option value="380">SOLICITAÇÃO</option>
+              <option value="340">SUGESTÃO</option>
+              <option value="45">ELOGIO</option>
+              <option value="13">DENÚNCIA</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <textarea
+              id="textarea1"
+              class="materialize-textarea"
+              maxlength="4000"
+              name="MENSAGEM"
+              required=""
+            ></textarea>
+            <label for="textarea1">Mensagem do Atendimento</label>
+          </div>
+        </div>
+      </div>
+      <button
+        class="buttonform btn waves-effect waves-light"
+        form="formPessoaJuridica"
+        name="submit"
+        type="submit"
+        value="Enviar"
+      >
+        Enviar
+      </button>
+    </form>
+  </div>
 </div>
 <!-- FIM ESTRUTURA MODAL PESSOA JURÍDICA -->
 
 <!-- ESTRUTURA MODAL - FORMULÁRIO PESQUISAR PROTOCOLO -->
 <div id="pesquisarProtocolo" class="modal modal-fixed">
-<div class="modal-content">
-<div class="loaderPesquisarProtocolo col m12 align-center center">
-<div class="preloader-wrapper big active">
-<div class="spinner-layer spinner-blue-only">
-<div class="circle-clipper left">
-<div class="circle"></div>
-</div>
-<div class="gap-patch">
-<div class="circle"></div>
-</div>
-<div class="circle-clipper right">
-<div class="circle"></div>
-</div>
-</div>
-</div>
-</div>
-<div class="sucessoPesquisarProtocolo col m12 center"></div>
-<form id="formPesquisarProtocolo" enctype="multipart/form-data" method="POST">
-<div class="row">
-<div class="col m12">
-<div class="row">
-<div class="input-field col m12"><select id="selectPesquisar" required="">
-<option disabled="disabled" selected="selected" value=""></option>
-<option value="AN">Anônima</option>
-<option value="PF">Pessoa Física</option>
-<option value="PJ">Pessoa Jurídica</option>
-</select>
-<label>Tipo de Manifestação</label></div>
-<div class="documento input-field col m8"></div>
-</div>
-<div class="input-field"><input id="protocolo" class="validate" name="protocolo" required="" type="text" />
-<label for="protocolo">Número do Protocolo</label></div>
-</div>
-<button class="buttonform btn waves-effect waves-light" form="formPesquisarProtocolo" name="submit" type="submit" value="Enviar">Enviar<i class="material-icons right">send</i></button>
-
-</div>
-</form></div>
+  <div class="modal-content">
+    <div class="loaderPesquisarProtocolo col m12 align-center center">
+      <div class="preloader-wrapper big active">
+        <div class="spinner-layer spinner-blue-only">
+          <div class="circle-clipper left">
+            <div class="circle"></div>
+          </div>
+          <div class="gap-patch">
+            <div class="circle"></div>
+          </div>
+          <div class="circle-clipper right">
+            <div class="circle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sucessoPesquisarProtocolo col m12 center"></div>
+    <form
+      id="formPesquisarProtocolo"
+      enctype="multipart/form-data"
+      method="POST"
+    >
+      <div class="row">
+        <div class="col m12">
+          <div class="row">
+            <div class="input-field col m12">
+              <select id="selectPesquisar" required="">
+                <option
+                  disabled="disabled"
+                  selected="selected"
+                  value=""
+                ></option>
+                <option value="AN">Anônima</option>
+                <option value="PF">Pessoa Física</option>
+                <option value="PJ">Pessoa Jurídica</option>
+              </select>
+              <label>Tipo de Manifestação</label>
+            </div>
+            <div class="documento input-field col m8"></div>
+          </div>
+          <div class="input-field">
+            <input
+              id="protocolo"
+              class="validate"
+              name="protocolo"
+              required=""
+              type="text"
+            />
+            <label for="protocolo">Número do Protocolo</label>
+          </div>
+        </div>
+        <button
+          class="buttonform btn waves-effect waves-light"
+          form="formPesquisarProtocolo"
+          name="submit"
+          type="submit"
+          value="Enviar"
+        >
+          Enviar<i class="material-icons right">send</i>
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 <!-- FIM ESTRUTURA MODAL PESQUISAR PROTOCOLO -->
